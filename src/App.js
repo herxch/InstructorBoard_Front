@@ -1,24 +1,198 @@
-import logo from './logo.svg';
-import './App.css';
+import { useState, useEffect, useRef } from 'react';
+import { io } from 'socket.io-client';
+import FloatingLabel from 'react-bootstrap/FloatingLabel';
+import Form from 'react-bootstrap/Form';
+import Button from 'react-bootstrap/Button';
+import Stack from 'react-bootstrap/Stack';
+import InputGroup from 'react-bootstrap/InputGroup';
+import Row from 'react-bootstrap/Row';
+import Col from 'react-bootstrap/Col';
+import ListGroup from 'react-bootstrap/ListGroup';
+
+// const socket = io('http://localhost:8080/');
+const socket = io(process.env.REACT_APP_BACKEND_URL);
 
 function App() {
+  // const [isConnected, setIsConnected] = useState(socket.connected);
+  const [enteredName, setEnteredName] = useState('');
+  const [enteredNameIsValid, setEnteredNameIsValid] = useState(true);
+  const [studentIsLoggedIn, setStudentIsLoggedIn] = useState(false);
+  const [instructorIsLoggedIn, setInstructorIsLoggedIn] = useState(false);
+  const [connectedStudents, setConnectedStudents] = useState([]);
+  const [enteredAnswer, setEnteredAnswer] = useState('');
+  const [answers, setAnswers] = useState([]);
+  const nameInputRef = useRef();
+  const answerInputRef = useRef();
+
+  useEffect(() => {
+    socket.on('connect', () => {
+      // setIsConnected(true);
+    });
+
+    socket.on('disconnect', () => {
+      // setIsConnected(false);
+      setStudentIsLoggedIn(false);
+      setInstructorIsLoggedIn(false);
+      setEnteredAnswer('');
+      setAnswers([]);
+    });
+
+    return () => {
+      socket.off('connect');
+      socket.off('disconnect');
+    };
+  }, []);
+
+  const joinStudentHandler = (e) => {
+    e.preventDefault();
+    const enteredNameValue = nameInputRef.current.value;
+    if (enteredNameValue.trim() === '') {
+      setEnteredNameIsValid(false);
+      return;
+    }
+    setEnteredName(enteredNameValue);
+    setEnteredNameIsValid(true);
+    setStudentIsLoggedIn(true);
+    socket.emit('join student', enteredNameValue);
+    nameInputRef.current.value = '';
+  };
+
+  const joinInstructorHandler = (e) => {
+    e.preventDefault();
+    const enteredNameValue = nameInputRef.current.value;
+    if (enteredNameValue.trim() === '') {
+      setEnteredNameIsValid(false);
+      return;
+    }
+    setEnteredName(enteredNameValue);
+    setEnteredNameIsValid(true);
+    setInstructorIsLoggedIn(true);
+    socket.emit('join instructor');
+  };
+
+  const sendAnswerHandler = (e) => {
+    e.preventDefault();
+    const enteredAnswerValue = answerInputRef.current.value;
+    if (enteredAnswerValue.trim() === '') {
+      return;
+    }
+    const payload = {
+      name: enteredName,
+      answer: enteredAnswerValue,
+    };
+    setEnteredAnswer(enteredAnswerValue);
+    socket.emit('send answer', payload);
+    answerInputRef.current.value = '';
+  };
+
+  socket.on('new user', (users) => {
+    setConnectedStudents(users);
+  });
+
+  socket.on('new answer', (answers) => {
+    setAnswers(answers);
+  });
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <Stack gap={2} className='col-md-5 mx-auto mt-5'>
+      {!studentIsLoggedIn && !instructorIsLoggedIn && (
+        <Form>
+          <FloatingLabel
+            controlId='floatingInput'
+            label='Your Name'
+            className='mb-3'
+          >
+            <Form.Control
+              ref={nameInputRef}
+              type='text'
+              placeholder='Enter your name...'
+            />
+            {!enteredNameIsValid && (
+              <Form.Text className='text-danger' id='nameValidation'>
+                Name must not be empty.
+              </Form.Text>
+            )}
+          </FloatingLabel>
+          <Row>
+            <Col>
+              <div className='d-grid gap-2'>
+                <Button onClick={joinStudentHandler} variant='outline-primary'>
+                  Student
+                </Button>
+              </div>
+            </Col>
+            <Col>
+              <div className='d-grid gap-2'>
+                <Button
+                  onClick={joinInstructorHandler}
+                  variant='outline-primary'
+                >
+                  Instructor
+                </Button>
+              </div>
+            </Col>
+          </Row>
+        </Form>
+      )}
+      {studentIsLoggedIn && (
+        <Form>
+          <Form.Group className='mb-3' controlId='ControlTextarea1'>
+            <Form.Label>{`Student: ${enteredName}, you are connected!`}</Form.Label>
+
+            <ListGroup className='mb-3'>
+              <ListGroup.Item className='border-0'>
+                Your answer is:
+              </ListGroup.Item>
+              <ListGroup.Item className='border-0'>
+                {enteredAnswer}
+              </ListGroup.Item>
+            </ListGroup>
+          </Form.Group>
+          <InputGroup className='mb-3'>
+            <Form.Control
+              placeholder='Enter Your Answer...'
+              aria-label='answer-input'
+              aria-describedby='basic-addon2'
+              ref={answerInputRef}
+            />
+            <Button
+              onClick={sendAnswerHandler}
+              variant='outline-primary'
+              id='button-addon2'
+            >
+              Submit
+            </Button>
+          </InputGroup>
+        </Form>
+      )}
+      {instructorIsLoggedIn && (
+        <Form>
+          <Form.Group className='mb-3' controlId='ControlTextarea1'>
+            <Form.Label>{`Instructor: ${enteredName}, you are connected!`}</Form.Label>
+            <ListGroup horizontal>
+              <ListGroup.Item className='border-0'>
+                Connected Students:
+              </ListGroup.Item>
+              {connectedStudents.map((student) => {
+                return (
+                  <ListGroup.Item className='border-0' key={student.id}>
+                    {student.username}
+                  </ListGroup.Item>
+                );
+              })}
+            </ListGroup>
+            <ListGroup className='mb-3'>
+              {answers.map((answer) => {
+                return (
+                  <ListGroup.Item
+                    key={answer.id}
+                  >{`${answer.name}'s answer: ${answer.answer}`}</ListGroup.Item>
+                );
+              })}
+            </ListGroup>
+          </Form.Group>
+        </Form>
+      )}
+    </Stack>
   );
 }
 
