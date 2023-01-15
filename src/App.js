@@ -9,7 +9,6 @@ import Row from 'react-bootstrap/Row';
 import Col from 'react-bootstrap/Col';
 import ListGroup from 'react-bootstrap/ListGroup';
 
-// const socket = io('http://localhost:8080/');
 const socket = io(process.env.REACT_APP_BACKEND_URL);
 
 function App() {
@@ -85,6 +84,10 @@ function App() {
     answerInputRef.current.value = '';
   };
 
+  const submitHandler = (e) => {
+    e.preventDefault();
+  };
+
   socket.on('new user', (users) => {
     setConnectedStudents(users);
   });
@@ -95,7 +98,7 @@ function App() {
   return (
     <Stack gap={2} className='col-md-5 mx-auto mt-5'>
       {!studentIsLoggedIn && !instructorIsLoggedIn && (
-        <Form>
+        <Form onSubmit={submitHandler}>
           <FloatingLabel
             controlId='floatingInput'
             label='Your Name'
@@ -134,7 +137,7 @@ function App() {
         </Form>
       )}
       {studentIsLoggedIn && (
-        <Form>
+        <Form onSubmit={submitHandler}>
           <Form.Group className='mb-3' controlId='ControlTextarea1'>
             <Form.Label>{`Student: ${enteredName}, you are connected!`}</Form.Label>
 
@@ -165,7 +168,7 @@ function App() {
         </Form>
       )}
       {instructorIsLoggedIn && (
-        <Form>
+        <Form onSubmit={submitHandler}>
           <Form.Group className='mb-3' controlId='ControlTextarea1'>
             <Form.Label>{`Instructor: ${enteredName}, you are connected!`}</Form.Label>
             <ListGroup horizontal>
