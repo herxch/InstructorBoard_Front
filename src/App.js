@@ -8,6 +8,8 @@ import InputGroup from 'react-bootstrap/InputGroup';
 import Row from 'react-bootstrap/Row';
 import Col from 'react-bootstrap/Col';
 import ListGroup from 'react-bootstrap/ListGroup';
+import Countdown from './components/Countdown';
+import TimerButton from './components/TimerButton';
 
 const socket = io(process.env.REACT_APP_BACKEND_URL);
 
@@ -22,6 +24,21 @@ function App() {
   const [answers, setAnswers] = useState([]);
   const nameInputRef = useRef();
   const answerInputRef = useRef();
+  const [counter, setCounter] = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCounter((prevCounter) => {
+        if (prevCounter === 0) {
+          clearInterval(interval);
+          return 0;
+        } else {
+          return prevCounter - 1;
+        }
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [counter]);
 
   useEffect(() => {
     socket.on('connect', () => {
@@ -95,6 +112,16 @@ function App() {
   socket.on('new answer', (answers) => {
     setAnswers(answers);
   });
+
+  const onTimerClickHandler = (e) => {
+    e.preventDefault();
+    socket.emit('set timer', +e.target.innerText);
+  };
+
+  socket.on('start timer', (timer) => {
+    setCounter(timer);
+  });
+
   return (
     <Stack gap={2} className='col-md-5 mx-auto mt-5'>
       {!studentIsLoggedIn && !instructorIsLoggedIn && (
@@ -104,11 +131,7 @@ function App() {
             label='Your Name'
             className='mb-3'
           >
-            <Form.Control
-              ref={nameInputRef}
-              type='text'
-              placeholder='Enter your name...'
-            />
+            <Form.Control ref={nameInputRef} type='text' />
             {!enteredNameIsValid && (
               <Form.Text className='text-danger' id='nameValidation'>
                 Name must not be empty.
@@ -161,16 +184,19 @@ function App() {
               onClick={sendAnswerHandler}
               variant='outline-primary'
               id='button-addon2'
+              disabled={!counter}
             >
               Submit
             </Button>
           </InputGroup>
+          <Countdown counter={counter} />
         </Form>
       )}
       {instructorIsLoggedIn && (
         <Form onSubmit={submitHandler}>
           <Form.Group className='mb-3' controlId='ControlTextarea1'>
             <Form.Label>{`Instructor: ${enteredName}, you are connected!`}</Form.Label>
+
             <ListGroup horizontal>
               <ListGroup.Item className='border-0'>
                 Connected Students:
@@ -183,6 +209,16 @@ function App() {
                 );
               })}
             </ListGroup>
+            <Col className='mb-3'>
+              <TimerButton value={5} onClick={onTimerClickHandler} />{' '}
+              <TimerButton value={15} onClick={onTimerClickHandler} />{' '}
+              <TimerButton value={30} onClick={onTimerClickHandler} />{' '}
+              <TimerButton value={45} onClick={onTimerClickHandler} />{' '}
+              <TimerButton value={60} onClick={onTimerClickHandler} />{' '}
+              <TimerButton value={90} onClick={onTimerClickHandler} />{' '}
+              <TimerButton value={120} onClick={onTimerClickHandler} />
+            </Col>
+            <Countdown counter={counter} />
             <ListGroup className='mb-3'>
               {answers.map((answer) => {
                 return (
