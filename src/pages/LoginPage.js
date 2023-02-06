@@ -10,7 +10,7 @@
 // import TimerButton from './components/TimerButton'; 
 
 // import { useState, useEffect, useRef } from 'react';
-// import { io } from 'socket.io-client';
+import { io } from 'socket.io-client';
 import { useLocation } from 'react-router-dom';
 
 
@@ -18,7 +18,8 @@ const LoginPage = () => {
  
     const {state} = useLocation()
     console.log(state)
-    
+
+    const socket = io(process.env.REACT_APP_BACKEND_URL)
  // const [isConnected, setIsConnected] = useState(socket.connected);
 
 
