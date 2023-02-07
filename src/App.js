@@ -25,6 +25,7 @@ function App() {
   const nameInputRef = useRef();
   const answerInputRef = useRef();
   const [counter, setCounter] = useState(0);
+  const [question, setQuestion] = useState()
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -101,6 +102,20 @@ function App() {
     answerInputRef.current.value = '';
   };
 
+  const sendQuestionHandler = (e) => {
+    e.preventDefault()
+        const enteredQuestionValue = answerInputRef.current.value;
+    if (enteredQuestionValue.trim() === '') {
+      return;
+    }
+    const payload = {
+      name: enteredName,
+      question: enteredQuestionValue,
+    };
+    socket.emit('send question', payload);
+    answerInputRef.current.value = '';
+  }
+
   const submitHandler = (e) => {
     e.preventDefault();
   };
@@ -122,8 +137,12 @@ function App() {
     setCounter(timer);
   });
 
+  socket.on('new question', (question)=>{
+    setQuestion(question)
+  })
+
   return (
-    <Stack gap={2} className='col-md-5 mx-auto mt-5'>
+    <Stack gap={2} className='col-md-5 mx-auto px-5 mt-5'>
       {!studentIsLoggedIn && !instructorIsLoggedIn && (
         <Form onSubmit={submitHandler}>
           <FloatingLabel
@@ -163,6 +182,19 @@ function App() {
         <Form onSubmit={submitHandler}>
           <Form.Group className='mb-3' controlId='ControlTextarea1'>
             <Form.Label>{`Student: ${enteredName}, you are connected!`}</Form.Label>
+
+            <InputGroup className='mb-3'>
+            <Form.Control
+              placeholder={question}
+              //aria-label='answer-input'
+              //aria-describedby='basic-addon2'
+              as="textarea" 
+              rows={5}
+              //ref={answerInputRef}
+              disabled
+            />
+
+          </InputGroup>
 
             <ListGroup className='mb-3'>
               <ListGroup.Item className='border-0'>
@@ -219,6 +251,38 @@ function App() {
               <TimerButton value={120} onClick={onTimerClickHandler} />
             </Col>
             <Countdown counter={counter} />
+
+            <InputGroup className='mb-3'>
+            <Form.Control
+              placeholder='Enter Your Question...'
+              aria-label='answer-input'
+              aria-describedby='basic-addon2'
+              as="textarea" 
+              rows={3}
+              ref={answerInputRef}
+            />
+            <Button
+              onClick={sendQuestionHandler}
+              variant='outline-primary'
+              id='button-addon2'
+          
+            >
+              Submit
+            </Button>
+          </InputGroup>
+          <InputGroup className='mb-3'>
+            <Form.Control
+              placeholder={question}
+              //aria-label='answer-input'
+              //aria-describedby='basic-addon2'
+              as="textarea" 
+              rows={5}
+              //ref={answerInputRef}
+              disabled
+            />
+
+          </InputGroup>
+
             <ListGroup className='mb-3'>
               {answers.map((answer) => {
                 return (
