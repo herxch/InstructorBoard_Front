@@ -221,7 +221,7 @@ function App() {
               Submit
             </Button>
           </InputGroup>
-          <Countdown counter={counter} />
+          {counter !== 0 && <Countdown counter={counter} />}
         </Form>
       )}
       {instructorIsLoggedIn && (
