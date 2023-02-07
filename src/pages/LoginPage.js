@@ -20,6 +20,7 @@ const LoginPage = () => {
     console.log(state)
 
     const socket = io(process.env.REACT_APP_BACKEND_URL)
+    console.log(socket)
  // const [isConnected, setIsConnected] = useState(socket.connected);
 
 
