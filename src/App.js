@@ -174,12 +174,6 @@ function App() {
 
   const connectionStatus = isConnected ? "connected" : "disconnected";
 
-  // useEffect(() => {
-  //   if (counter === 1 && buttonRef.current) {
-  //     buttonRef.current.click();
-  //   }
-  // }, [counter]);
-
   return (
     <Stack gap={2} className="col-md-5 mx-auto px-5 mt-5">
       {!studentIsLoggedIn && !instructorIsLoggedIn && (
